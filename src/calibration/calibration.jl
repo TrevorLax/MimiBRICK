@@ -5,10 +5,11 @@ using KernelDensity
 using LinearAlgebra
 using Mimi
 using NetCDF
-using RobustAdaptiveMetropolisSampler
 using MCMCDiagnostics
+using RobustAdaptiveMetropolisSampler
 using Random
 using StatsBase
+using Turing
 
 #-------------------------------------------------------------------------------
 # This function carries out a Markov chain Monte Carlo calibration of BRICK.
@@ -117,9 +118,21 @@ function run_calibration(;  output_dir::String,
 
     println("Begin baseline calibration of "*model_config*" model.\n")
 
+
+
+
     # Carry out Bayesian calibration using robust adaptive metropolis MCMC algorithm.
     Random.seed!(2021) # for reproducibility
     @time chain_raw, accept_rate, cov_matrix, log_post = RAM_sample(log_posterior_mymodel, initial_parameters, initial_covariance_matrix, Int(total_chain_length), opt_α=0.234, output_log_probability_x=true)
+
+
+
+
+
+
+
+
+
 
     ##------------------------------------------------------------------------------
     ## Burn-in removal and check convergence via Gelman and Rubin potential scale
