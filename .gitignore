@@ -1,0 +1,8 @@
+docs/build/
+.ipynb_checkpoints
+.DS_Store
+/results
+/Manifest.toml
+results.zip
+.vscode/settings.json
+
