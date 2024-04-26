@@ -98,7 +98,8 @@ function get_brick_calibration_data(;model_start_year::Int=1850, calibration_end
     return calibration_data, obs_antarctic_trends, obs_thermal_trends
 end
 
-calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir="data/calibration_data")
+# calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir="data/calibration_data")
+calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir=joinpath(@__DIR__, "..", "..", "..", "data", "calibration_data"))
 
 function get_calibration_inputs(calibration_data::DataFrame, thermal_trends::DataFrame)
     ## get calibration data indices 
@@ -242,10 +243,10 @@ end
 
 end
 
-run_brick = construct_run_brick(1850, 2017)
-(obs, err, obs_length) = get_calibration_inputs(calibration_data, thermal_trends)
-model = brick_posterior(obs, err, obs_length, thermal_trends, run_brick)
-chain = sample(model, NUTS(), 100)
+# run_brick = construct_run_brick(1850, 2017)
+# (obs, err, obs_length) = get_calibration_inputs(calibration_data, thermal_trends)
+# model = brick_posterior(obs, err, obs_length, thermal_trends, run_brick)
+# chain = sample(model, NUTS(), 100)
 
 ##------------------------------------------------------------------------------
 ## End

@@ -106,8 +106,13 @@ function run_calibration(;  output_dir::String,
     # functions in the helper scripts included above. Using this instead of the
     # @eval and Symbols so this can be run as a function instead of a script.
     if model_config=="brick"
-        run_mymodel! = MimiBRICK.construct_run_brick(calibration_start_year, calibration_end_year)
-        log_posterior_mymodel = MimiBRICK.construct_brick_log_posterior(run_mymodel!, model_start_year=calibration_start_year, calibration_end_year=calibration_end_year, joint_antarctic_prior=false)
+        # run_mymodel! = MimiBRICK.construct_run_brick(calibration_start_year, calibration_end_year)
+        # log_posterior_mymodel = MimiBRICK.construct_brick_log_posterior(run_mymodel!, model_start_year=calibration_start_year, calibration_end_year=calibration_end_year, joint_antarctic_prior=false)
+        println("running new posterior functions")
+        run_brick = construct_run_brick(1850, 2017)
+        (obs, err, obs_length) = get_calibration_inputs(calibration_data, thermal_trends)
+        model = brick_posterior(obs, err, obs_length, thermal_trends, run_brick)
+        chain = sample(model, NUTS(), 100)
     elseif model_config=="doeclimbrick"
         run_mymodel! = MimiBRICK.construct_run_doeclimbrick(calibration_start_year, calibration_end_year)
         log_posterior_mymodel = MimiBRICK.construct_doeclimbrick_log_posterior(run_mymodel!, model_start_year=calibration_start_year, calibration_end_year=calibration_end_year, joint_antarctic_prior=false)
@@ -121,9 +126,9 @@ function run_calibration(;  output_dir::String,
 
 
 
-    # Carry out Bayesian calibration using robust adaptive metropolis MCMC algorithm.
-    Random.seed!(2021) # for reproducibility
-    @time chain_raw, accept_rate, cov_matrix, log_post = RAM_sample(log_posterior_mymodel, initial_parameters, initial_covariance_matrix, Int(total_chain_length), opt_α=0.234, output_log_probability_x=true)
+    # # Carry out Bayesian calibration using robust adaptive metropolis MCMC algorithm.
+    # Random.seed!(2021) # for reproducibility
+    # @time chain_raw, accept_rate, cov_matrix, log_post = RAM_sample(log_posterior_mymodel, initial_parameters, initial_covariance_matrix, Int(total_chain_length), opt_α=0.234, output_log_probability_x=true)
 
 
 
@@ -134,67 +139,67 @@ function run_calibration(;  output_dir::String,
 
 
 
-    ##------------------------------------------------------------------------------
-    ## Burn-in removal and check convergence via Gelman and Rubin potential scale
-    ## reduction factor (PSRF)
-    ##------------------------------------------------------------------------------
+    # ##------------------------------------------------------------------------------
+    # ## Burn-in removal and check convergence via Gelman and Rubin potential scale
+    # ## reduction factor (PSRF)
+    # ##------------------------------------------------------------------------------
 
-    # Remove the burn-in period
-    chain_burned = chain_raw[(burnin_length+1):total_chain_length,:]
-    log_post_burned = log_post[(burnin_length+1):total_chain_length]
+    # # Remove the burn-in period
+    # chain_burned = chain_raw[(burnin_length+1):total_chain_length,:]
+    # log_post_burned = log_post[(burnin_length+1):total_chain_length]
 
-    # Check convergence by computing Gelman and Rubin diagnostic for each parameter (potential scale reduction factor)
-    psrf = Array{Float64,1}(undef , num_parameters)
-    for p in 1:num_parameters
-        chains = reshape(chain_burned[:,p], Int(size(chain_burned)[1]/num_walkers), num_walkers)
-        chains = [chains[:,k] for k in 1:num_walkers]
-        psrf[p] = potential_scale_reduction(chains...)
-    end
+    # # Check convergence by computing Gelman and Rubin diagnostic for each parameter (potential scale reduction factor)
+    # psrf = Array{Float64,1}(undef , num_parameters)
+    # for p in 1:num_parameters
+    #     chains = reshape(chain_burned[:,p], Int(size(chain_burned)[1]/num_walkers), num_walkers)
+    #     chains = [chains[:,k] for k in 1:num_walkers]
+    #     psrf[p] = potential_scale_reduction(chains...)
+    # end
 
-    # Check if psrf < threshold_gr for each parameters
-    if all(x -> x < threshold_gr, psrf)
-        println("All parameter chains have Gelman and Rubin PSRF < ",threshold_gr)
-    else
-        println("WARNING: some parameter chains have Gelman and Rubin PSRF > ",threshold_gr)
-        for p in 1:num_parameters
-            println(parnames[p],"  ",round(psrf[p],digits=4))
-        end
-    end
+    # # Check if psrf < threshold_gr for each parameters
+    # if all(x -> x < threshold_gr, psrf)
+    #     println("All parameter chains have Gelman and Rubin PSRF < ",threshold_gr)
+    # else
+    #     println("WARNING: some parameter chains have Gelman and Rubin PSRF > ",threshold_gr)
+    #     for p in 1:num_parameters
+    #         println(parnames[p],"  ",round(psrf[p],digits=4))
+    #     end
+    # end
 
 
-    ##------------------------------------------------------------------------------
-    ## Subsampling the final chains
-    ##------------------------------------------------------------------------------
+    # ##------------------------------------------------------------------------------
+    # ## Subsampling the final chains
+    # ##------------------------------------------------------------------------------
 
-    Random.seed!(2022) # for reproducibility
-    idx_subsample = sample(1:size(chain_burned)[1], size_subsample, replace=false)
-    final_sample = chain_burned[idx_subsample,:]
-    log_post_final_sample = log_post_burned[idx_subsample]
+    # Random.seed!(2022) # for reproducibility
+    # idx_subsample = sample(1:size(chain_burned)[1], size_subsample, replace=false)
+    # final_sample = chain_burned[idx_subsample,:]
+    # log_post_final_sample = log_post_burned[idx_subsample]
 
-    ##------------------------------------------------------------------------------
-    ## Save the results
-    ##------------------------------------------------------------------------------
+    # ##------------------------------------------------------------------------------
+    # ## Save the results
+    # ##------------------------------------------------------------------------------
 
-    # Save calibrated parameter samples
-    println("Saving calibrated parameters for "*model_config*".\n")
+    # # Save calibrated parameter samples
+    # println("Saving calibrated parameters for "*model_config*".\n")
 
-    save(joinpath(output_dir, "mcmc_log_post_$(model_config).csv"), DataFrame(log_post=log_post))
-    save(joinpath(output_dir, "mcmc_acceptance_rate_$(model_config).csv"), DataFrame(acceptance_rate=accept_rate))
-    save(joinpath(output_dir, "proposal_covariance_matrix_$(model_config).csv"), DataFrame(cov_matrix, :auto))
-    save(joinpath(output_dir, "parameters_full_chain_$(model_config).csv"), DataFrame(chain_raw,parnames))
-    save(joinpath(output_dir, "parameters_subsample_$(model_config).csv"), DataFrame(final_sample,parnames))
-    save(joinpath(output_dir, "log_post_subsample_$(model_config).csv"), DataFrame(log_post=log_post_final_sample))
+    # save(joinpath(output_dir, "mcmc_log_post_$(model_config).csv"), DataFrame(log_post=log_post))
+    # save(joinpath(output_dir, "mcmc_acceptance_rate_$(model_config).csv"), DataFrame(acceptance_rate=accept_rate))
+    # save(joinpath(output_dir, "proposal_covariance_matrix_$(model_config).csv"), DataFrame(cov_matrix, :auto))
+    # save(joinpath(output_dir, "parameters_full_chain_$(model_config).csv"), DataFrame(chain_raw,parnames))
+    # save(joinpath(output_dir, "parameters_subsample_$(model_config).csv"), DataFrame(final_sample,parnames))
+    # save(joinpath(output_dir, "log_post_subsample_$(model_config).csv"), DataFrame(log_post=log_post_final_sample))
 
-    # Save initial conditions for future runs
-    path_new_initial_conditions = joinpath(output_dir, "calibration_data", "from_calibration_chains")
-    mkpath(path_new_initial_conditions)
-    filename_new_initial_parameters = "calibration_initial_values_"*model_config*".csv"
-    new_initial_parameters = DataFrame(parameter_names = parnames, parameter_values = Vector(chain_burned[size(chain_burned)[1],:]))
-    save(joinpath(path_new_initial_conditions, filename_new_initial_parameters), new_initial_parameters)
-    filename_new_initial_covariance = "initial_proposal_covariance_matrix_"*model_config*".csv"
-    save(joinpath(path_new_initial_conditions, filename_new_initial_covariance), DataFrame(cov_matrix, :auto))
+    # # Save initial conditions for future runs
+    # path_new_initial_conditions = joinpath(output_dir, "calibration_data", "from_calibration_chains")
+    # mkpath(path_new_initial_conditions)
+    # filename_new_initial_parameters = "calibration_initial_values_"*model_config*".csv"
+    # new_initial_parameters = DataFrame(parameter_names = parnames, parameter_values = Vector(chain_burned[size(chain_burned)[1],:]))
+    # save(joinpath(path_new_initial_conditions, filename_new_initial_parameters), new_initial_parameters)
+    # filename_new_initial_covariance = "initial_proposal_covariance_matrix_"*model_config*".csv"
+    # save(joinpath(path_new_initial_conditions, filename_new_initial_covariance), DataFrame(cov_matrix, :auto))
 
-    return (DataFrame(chain_raw,parnames), accept_rate, cov_matrix, log_post, DataFrame(final_sample,parnames), log_post_final_sample)
+    # return (DataFrame(chain_raw,parnames), accept_rate, cov_matrix, log_post, DataFrame(final_sample,parnames), log_post_final_sample)
 end
 
 ##------------------------------------------------------------------------------
