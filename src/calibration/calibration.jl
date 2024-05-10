@@ -108,7 +108,25 @@ function run_calibration(;  output_dir::String,
     if model_config=="brick"
         # run_mymodel! = MimiBRICK.construct_run_brick(calibration_start_year, calibration_end_year)
         # log_posterior_mymodel = MimiBRICK.construct_brick_log_posterior(run_mymodel!, model_start_year=calibration_start_year, calibration_end_year=calibration_end_year, joint_antarctic_prior=false)
-        println("running new posterior functions")
+        # println("IN")
+        # println("CALIBRATION")
+        # println(".JL")
+        
+        # println("before struct")
+        # struct AntarcticPrior <: ContinuousMultivariateDistribution end
+        # println("after struct")
+        
+        # antarctic_dist_funcs = construct_antarctic_prior()
+        # println("antarctic prior constructed")
+
+        # Base.length(d::AntarcticPrior) = 15
+        # Distributions._rand!(rng::AbstractRNG, d::AntarcticPrior, x::AbstractArray{<:Real}) = antarctic_dist_funcs[1](rng, d, x)
+        # Distributions.logpdf(d::AntarcticPrior, x::AbstractArray{<:Real}) = antarctic_dist_funcs[2](d, x)
+        # Bijectors.bijector(d::AntarcticPrior) = antarctic_dist_funcs[3]
+
+        # # calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir="data/calibration_data")
+        # calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir=joinpath(@__DIR__, "..", "..", "..", "data", "calibration_data"))
+
         run_brick = construct_run_brick(1850, 2017)
         (obs, err, obs_length) = get_calibration_inputs(calibration_data, thermal_trends)
         model = brick_posterior(obs, err, obs_length, thermal_trends, run_brick)
