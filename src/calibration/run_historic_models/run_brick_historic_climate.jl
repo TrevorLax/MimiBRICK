@@ -59,6 +59,11 @@ function construct_run_brick(calibration_start_year::Int, calibration_end_year::
         # Set BRICK to use sampled parameter values.
         #----------------------------------------------------------
 
+        println(typeof(m))
+        println(typeof(:antarctic_ocean))
+        println(typeof(:anto_α))
+        println(typeof(anto_α))
+
         # ----- Antarctic Ocean ----- #
         update_param!(m,  :antarctic_ocean, :anto_α, anto_α)
         update_param!(m,  :antarctic_ocean, :anto_β, anto_β)

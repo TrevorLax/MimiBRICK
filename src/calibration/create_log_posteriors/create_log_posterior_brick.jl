@@ -84,13 +84,15 @@ function construct_antarctic_prior(; calibration_data_dir::Union{String, Nothing
     return (rand_func!, log_likelihood_func, bijector_func)        
 end
 
-antarctic_dist_funcs = construct_antarctic_prior()
+antarctic_dist_funcs = construct_antarctic_prior() 
 println(" before antarctic prior constructed")
 Base.length(d::AntarcticPrior) = 15
 Distributions._rand!(rng::AbstractRNG, d::AntarcticPrior, x::AbstractArray{<:Real}) = antarctic_dist_funcs[1](rng, d, x)
 Distributions.logpdf(d::AntarcticPrior, x::AbstractArray{<:Real}) = antarctic_dist_funcs[2](d, x)
-Bijectors.bijector(d::AntarcticPrior) = antarctic_dist_funcs[3]
+Bijectors.bijector(d::AntarcticPrior) = antarctic_dist_funcs[3](d)
 println(" after antarctic prior constructed")
+
+
 
 function get_brick_calibration_data(;model_start_year::Int=1850, calibration_end_year::Int=2017, calibration_data_dir::Union{Nothing, String} = nothing)
 
