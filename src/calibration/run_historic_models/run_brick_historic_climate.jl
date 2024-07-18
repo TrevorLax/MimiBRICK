@@ -59,47 +59,132 @@ function construct_run_brick(calibration_start_year::Int, calibration_end_year::
         # Set BRICK to use sampled parameter values.
         #----------------------------------------------------------
 
-        println(typeof(m))
-        println(typeof(:antarctic_ocean))
-        println(typeof(:anto_α))
-        println(typeof(anto_α))
+        # println(param)
+  
 
-        # ----- Antarctic Ocean ----- #
-        update_param!(m,  :antarctic_ocean, :anto_α, anto_α)
-        update_param!(m,  :antarctic_ocean, :anto_β, anto_β)
+        # println(typeof(param))
+        
+        # Turing uses ForwardDiff, but update_param requires a value to be passed 
+        if !(param[1] isa Float64)
 
-        # ----- Antarctic Ice Sheet ----- #
-        update_param!(m, :antarctic_icesheet, :ais_sea_level₀,             antarctic_s₀)
-        update_param!(m, :antarctic_icesheet, :ais_bedheight₀,             antarctic_bedheight₀)
-        update_param!(m, :antarctic_icesheet, :ais_slope,                  antarctic_slope)
-        update_param!(m, :antarctic_icesheet, :ais_μ,                      antarctic_μ)
-        update_param!(m, :antarctic_icesheet, :ais_runoffline_snowheight₀, antarctic_runoff_height₀)
-        update_param!(m, :antarctic_icesheet, :ais_c,                      antarctic_c)
-        update_param!(m, :antarctic_icesheet, :ais_precipitation₀,         antarctic_precip₀)
-        update_param!(m, :antarctic_icesheet, :ais_κ,                      antarctic_κ)
-        update_param!(m, :antarctic_icesheet, :ais_ν,                      antarctic_ν)
-        update_param!(m, :antarctic_icesheet, :ais_iceflow₀,               antarctic_flow₀)
-        update_param!(m, :antarctic_icesheet, :ais_γ,                      antarctic_γ)
-        update_param!(m, :antarctic_icesheet, :ais_α,                      antarctic_α)
-        update_param!(m, :antarctic_icesheet, :temperature_threshold,      antarctic_temp_threshold)
-        update_param!(m, :antarctic_icesheet, :λ,                          antarctic_λ)
+            # println(anto_α.value)
 
-        # ----- Glaciers & Small Ice Caps ----- #
-        update_param!(m, :glaciers_small_icecaps, :gsic_β₀, glaciers_β₀)
-        update_param!(m, :glaciers_small_icecaps, :gsic_v₀, glaciers_v₀)
-        update_param!(m, :glaciers_small_icecaps, :gsic_s₀, glaciers_s₀)
-        update_param!(m, :glaciers_small_icecaps, :gsic_n,  glaciers_n)
+            # ----- Antarctic Ocean ----- #
+            update_param!(m,  :antarctic_ocean, :anto_α, anto_α.value)
+            update_param!(m,  :antarctic_ocean, :anto_β, anto_β.value)
 
-        # ----- Greenland Ice Sheet ----- #
-        update_param!(m, :greenland_icesheet, :greenland_a,  greenland_a)
-        update_param!(m, :greenland_icesheet, :greenland_b,  greenland_b)
-        update_param!(m, :greenland_icesheet, :greenland_α,  greenland_α)
-        update_param!(m, :greenland_icesheet, :greenland_β,  greenland_β)
-        update_param!(m, :greenland_icesheet, :greenland_v₀, greenland_v₀)
+            # ----- Antarctic Ice Sheet ----- #
+            update_param!(m, :antarctic_icesheet, :ais_sea_level₀,             antarctic_s₀.value)
+            update_param!(m, :antarctic_icesheet, :ais_bedheight₀,             antarctic_bedheight₀.value)
+            update_param!(m, :antarctic_icesheet, :ais_slope,                  antarctic_slope.value)
+            update_param!(m, :antarctic_icesheet, :ais_μ,                      antarctic_μ.value)
+            update_param!(m, :antarctic_icesheet, :ais_runoffline_snowheight₀, antarctic_runoff_height₀.value)
+            update_param!(m, :antarctic_icesheet, :ais_c,                      antarctic_c.value)
+            update_param!(m, :antarctic_icesheet, :ais_precipitation₀,         antarctic_precip₀.value)
+            update_param!(m, :antarctic_icesheet, :ais_κ,                      antarctic_κ.value)
+            update_param!(m, :antarctic_icesheet, :ais_ν,                      antarctic_ν.value)
+            update_param!(m, :antarctic_icesheet, :ais_iceflow₀,               antarctic_flow₀.value)
+            update_param!(m, :antarctic_icesheet, :ais_γ,                      antarctic_γ.value)
+            update_param!(m, :antarctic_icesheet, :ais_α,                      antarctic_α.value)
+            update_param!(m, :antarctic_icesheet, :temperature_threshold,      antarctic_temp_threshold.value)
+            update_param!(m, :antarctic_icesheet, :λ,                          antarctic_λ.value)
 
-        # ----- Thermal Expansion ----- #
-        update_param!(m, :thermal_expansion, :te_α,  thermal_α)
-        update_param!(m, :thermal_expansion, :te_s₀, thermal_s₀)
+            # ----- Glaciers & Small Ice Caps ----- #
+            update_param!(m, :glaciers_small_icecaps, :gsic_β₀, glaciers_β₀.value)
+            update_param!(m, :glaciers_small_icecaps, :gsic_v₀, glaciers_v₀.value)
+            update_param!(m, :glaciers_small_icecaps, :gsic_s₀, glaciers_s₀.value)
+            update_param!(m, :glaciers_small_icecaps, :gsic_n,  glaciers_n.value)
+
+            # ----- Greenland Ice Sheet ----- #
+            update_param!(m, :greenland_icesheet, :greenland_a,  greenland_a.value)
+            update_param!(m, :greenland_icesheet, :greenland_b,  greenland_b.value)
+            update_param!(m, :greenland_icesheet, :greenland_α,  greenland_α.value)
+            update_param!(m, :greenland_icesheet, :greenland_β,  greenland_β.value)
+            update_param!(m, :greenland_icesheet, :greenland_v₀, greenland_v₀.value)
+
+            # ----- Thermal Expansion ----- #
+            update_param!(m, :thermal_expansion, :te_α,  thermal_α.value)
+            update_param!(m, :thermal_expansion, :te_s₀, thermal_s₀.value)
+
+        else 
+            # ----- Antarctic Ocean ----- #
+            update_param!(m,  :antarctic_ocean, :anto_α, anto_α)
+            update_param!(m,  :antarctic_ocean, :anto_β, anto_β)
+
+            # ----- Antarctic Ice Sheet ----- #
+            update_param!(m, :antarctic_icesheet, :ais_sea_level₀,             antarctic_s₀)
+            update_param!(m, :antarctic_icesheet, :ais_bedheight₀,             antarctic_bedheight₀)
+            update_param!(m, :antarctic_icesheet, :ais_slope,                  antarctic_slope)
+            update_param!(m, :antarctic_icesheet, :ais_μ,                      antarctic_μ)
+            update_param!(m, :antarctic_icesheet, :ais_runoffline_snowheight₀, antarctic_runoff_height₀)
+            update_param!(m, :antarctic_icesheet, :ais_c,                      antarctic_c)
+            update_param!(m, :antarctic_icesheet, :ais_precipitation₀,         antarctic_precip₀)
+            update_param!(m, :antarctic_icesheet, :ais_κ,                      antarctic_κ)
+            update_param!(m, :antarctic_icesheet, :ais_ν,                      antarctic_ν)
+            update_param!(m, :antarctic_icesheet, :ais_iceflow₀,               antarctic_flow₀)
+            update_param!(m, :antarctic_icesheet, :ais_γ,                      antarctic_γ)
+            update_param!(m, :antarctic_icesheet, :ais_α,                      antarctic_α)
+            update_param!(m, :antarctic_icesheet, :temperature_threshold,      antarctic_temp_threshold)
+            update_param!(m, :antarctic_icesheet, :λ,                          antarctic_λ)
+
+            # ----- Glaciers & Small Ice Caps ----- #
+            update_param!(m, :glaciers_small_icecaps, :gsic_β₀, glaciers_β₀)
+            update_param!(m, :glaciers_small_icecaps, :gsic_v₀, glaciers_v₀)
+            update_param!(m, :glaciers_small_icecaps, :gsic_s₀, glaciers_s₀)
+            update_param!(m, :glaciers_small_icecaps, :gsic_n,  glaciers_n)
+
+            # ----- Greenland Ice Sheet ----- #
+            update_param!(m, :greenland_icesheet, :greenland_a,  greenland_a)
+            update_param!(m, :greenland_icesheet, :greenland_b,  greenland_b)
+            update_param!(m, :greenland_icesheet, :greenland_α,  greenland_α)
+            update_param!(m, :greenland_icesheet, :greenland_β,  greenland_β)
+            update_param!(m, :greenland_icesheet, :greenland_v₀, greenland_v₀)
+
+            # ----- Thermal Expansion ----- #
+            update_param!(m, :thermal_expansion, :te_α,  thermal_α)
+            update_param!(m, :thermal_expansion, :te_s₀, thermal_s₀)
+
+        end 
+
+
+        # # ----- Antarctic Ocean ----- #
+        # update_param!(m,  :antarctic_ocean, :anto_α, anto_α)
+        # update_param!(m,  :antarctic_ocean, :anto_β, anto_β)
+
+        # # ----- Antarctic Ice Sheet ----- #
+        # update_param!(m, :antarctic_icesheet, :ais_sea_level₀,             antarctic_s₀)
+        # update_param!(m, :antarctic_icesheet, :ais_bedheight₀,             antarctic_bedheight₀)
+        # update_param!(m, :antarctic_icesheet, :ais_slope,                  antarctic_slope)
+        # update_param!(m, :antarctic_icesheet, :ais_μ,                      antarctic_μ)
+        # update_param!(m, :antarctic_icesheet, :ais_runoffline_snowheight₀, antarctic_runoff_height₀)
+        # update_param!(m, :antarctic_icesheet, :ais_c,                      antarctic_c)
+        # update_param!(m, :antarctic_icesheet, :ais_precipitation₀,         antarctic_precip₀)
+        # update_param!(m, :antarctic_icesheet, :ais_κ,                      antarctic_κ)
+        # update_param!(m, :antarctic_icesheet, :ais_ν,                      antarctic_ν)
+        # update_param!(m, :antarctic_icesheet, :ais_iceflow₀,               antarctic_flow₀)
+        # update_param!(m, :antarctic_icesheet, :ais_γ,                      antarctic_γ)
+        # update_param!(m, :antarctic_icesheet, :ais_α,                      antarctic_α)
+        # update_param!(m, :antarctic_icesheet, :temperature_threshold,      antarctic_temp_threshold)
+        # update_param!(m, :antarctic_icesheet, :λ,                          antarctic_λ)
+
+        # # ----- Glaciers & Small Ice Caps ----- #
+        # update_param!(m, :glaciers_small_icecaps, :gsic_β₀, glaciers_β₀)
+        # update_param!(m, :glaciers_small_icecaps, :gsic_v₀, glaciers_v₀)
+        # update_param!(m, :glaciers_small_icecaps, :gsic_s₀, glaciers_s₀)
+        # update_param!(m, :glaciers_small_icecaps, :gsic_n,  glaciers_n)
+
+        # # ----- Greenland Ice Sheet ----- #
+        # update_param!(m, :greenland_icesheet, :greenland_a,  greenland_a)
+        # update_param!(m, :greenland_icesheet, :greenland_b,  greenland_b)
+        # update_param!(m, :greenland_icesheet, :greenland_α,  greenland_α)
+        # update_param!(m, :greenland_icesheet, :greenland_β,  greenland_β)
+        # update_param!(m, :greenland_icesheet, :greenland_v₀, greenland_v₀)
+
+        # # ----- Thermal Expansion ----- #
+        # update_param!(m, :thermal_expansion, :te_α,  thermal_α)
+        # update_param!(m, :thermal_expansion, :te_s₀, thermal_s₀)
+
+        
 
         # Run model.
         run(m)

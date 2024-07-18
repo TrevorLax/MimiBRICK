@@ -169,6 +169,34 @@ end
     glaciers_β₀ ~ Uniform(0.0, 0.041)
     glaciers_n  ~ Uniform(0.55, 1.0)
 
+    # println(σ_glaciers)
+    # println(typeof(σ_glaciers))
+
+    # if !(σ_glaciers isa Float64)
+    #     # println("but like why? ")
+    #     σ_glaciers                 = σ_glaciers.value
+    #     σ_greenland                = σ_greenland.value
+    #     σ_antarctic                = σ_antarctic.value
+    #     σ_gmsl                     = σ_gmsl.value
+    #     ρ_glaciers                 = ρ_glaciers.value
+    #     ρ_greenland                = ρ_greenland.value
+    #     ρ_antarctic                = ρ_antarctic.value
+    #     ρ_gmsl                     = ρ_gmsl.value
+    #     thermal_s₀                 = thermal_s₀.value
+    #     greenland_v₀               = greenland_v₀.value
+    #     glaciers_v₀                = glaciers_v₀.value
+    #     glaciers_s₀                = glaciers_s₀.value
+    #     antarctic_s₀               = antarctic_s₀.value
+    #     thermal_α                  = thermal_α.value
+    #     greenland_a                = greenland_a.value
+    #     greenland_b                = greenland_b.value
+    #     greenland_α                = greenland_α.value
+    #     greenland_β                = greenland_β.value
+    #     glaciers_β₀                = glaciers_β₀.value
+    #     glaciers_n                 = glaciers_n.value
+    # end
+
+
 
     antarctic_params ~ AntarcticPrior()
 
@@ -224,10 +252,38 @@ end
                     )
 
     break_indices = cumsum(obs_lengths)
+    # println(typeof(break_indices))
+
     n_all = sum(obs_lengths)             
 
     # Calculate the AIS trends (in milimeters) from the annual modeled output.
     modeled_thermal_trend = calculate_trends(disallowmissing(modeled_thermal_expansion), thermal_trends, model_start_year, calibration_end_year)
+
+    # if !(σ_glaciers isa Float64)
+
+    #     ## construct covariance matrices for each observation series
+    #     H_glaciers = abs.((1:obs_lengths[1]) .- (1:obs_lengths[1])')
+    #     Σ_glaciers = ((σ_glaciers.value / sqrt(1 - ρ_glaciers.value^2)) .^ H_glaciers)
+    #     H_greenland = abs.((1:obs_lengths[2]) .- (1:obs_lengths[2])')
+    #     Σ_greenland = ((σ_greenland.value / sqrt(1 - ρ_greenland.value^2)) .^ H_greenland) 
+    #     H_antarctic = abs.((1:obs_lengths[3]) .- (1:obs_lengths[3])')
+    #     Σ_antarctic = ((σ_antarctic.value / sqrt(1 - ρ_antarctic.value^2)) .^ H_antarctic)
+    #     H_gmsl = abs.((1:obs_lengths[4]) .- (1:obs_lengths[4])')
+    #     Σ_gmsl = ((σ_gmsl.value / sqrt(1 - ρ_gmsl.value^2)) .^ H_gmsl)
+
+    # else 
+
+    #     ## construct covariance matrices for each observation series
+    #     H_glaciers = abs.((1:obs_lengths[1]) .- (1:obs_lengths[1])')
+    #     Σ_glaciers = ((σ_glaciers / sqrt(1 - ρ_glaciers^2)) .^ H_glaciers)
+    #     H_greenland = abs.((1:obs_lengths[2]) .- (1:obs_lengths[2])')
+    #     Σ_greenland = ((σ_greenland / sqrt(1 - ρ_greenland^2)) .^ H_greenland) 
+    #     H_antarctic = abs.((1:obs_lengths[3]) .- (1:obs_lengths[3])')
+    #     Σ_antarctic = ((σ_antarctic / sqrt(1 - ρ_antarctic^2)) .^ H_antarctic)
+    #     H_gmsl = abs.((1:obs_lengths[4]) .- (1:obs_lengths[4])')
+    #     Σ_gmsl = ((σ_gmsl / sqrt(1 - ρ_gmsl^2)) .^ H_gmsl)
+
+    # end
 
     ## construct covariance matrices for each observation series
     H_glaciers = abs.((1:obs_lengths[1]) .- (1:obs_lengths[1])')
@@ -240,7 +296,18 @@ end
     Σ_gmsl = ((σ_gmsl / sqrt(1 - ρ_gmsl^2)) .^ H_gmsl)
 
     # combine time series and compute joint likelihood
-    Σ = zeros(n_all, n_all)
+    Σ = zeros(eltype(Σ_glaciers), n_all, n_all)
+
+    # println("break_indices")
+    # println(break_indices)
+    # println(typeof(break_indices))
+    # println("Σ_glaciers")
+    # println(Σ_glaciers)
+    # println(typeof(Σ_glaciers))
+
+
+
+
     Σ[1:break_indices[1], 1:break_indices[1]] = Σ_glaciers
     Σ[break_indices[1]+1:break_indices[2], break_indices[1]+1:break_indices[2]] = Σ_greenland
     Σ[break_indices[2]+1:break_indices[3], break_indices[2]+1:break_indices[3]] = Σ_antarctic
@@ -248,7 +315,32 @@ end
     Σ += obs_error
 
     modeled_all = [modeled_glaciers; modeled_greenland; modeled_antarctic; modeled_gmsl; modeled_thermal_trend]
+
+    # println("before mvnormal")
+
+    # println(first(Σ, 5))
+
+    # println(isposdef(Σ))
+
+
+    
+    # scaled_identity_matrix = Matrix(I, size(Σ)) * 0.01
+    # Σ = Σ + scaled_identity_matrix
+    # Σ = Symmetric(Σ)
+
+    # (evals, evecs) = eigen(Σ)
+    # println(evals)
+    # println("minimum")
+    # println(minimum(evals))
+
+    println(typeof(Σ))
+    println(PDMats.Symmetric(Σ[1:5,1:5]))
+
+
+    # modeled_all ~ MvNormal(observations, PDMats.Symmetric(Σ))
     modeled_all ~ MvNormal(observations, PDMats.Symmetric(Σ))
+
+    # println("after mvnormal")
 
 
 end

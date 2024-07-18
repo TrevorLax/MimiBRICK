@@ -47,7 +47,7 @@ function run_calibration(;  output_dir::String,
                             total_chain_length=1000, 
                             burnin_length=0, 
                             threshold_gr=1.1, 
-                            num_walkers=2,
+                            num_walkers=1,
                             size_subsample=1000, 
                             start_from_priors=false,
                             calibration_data_dir::Union{String, Nothing} = nothing
@@ -125,12 +125,21 @@ function run_calibration(;  output_dir::String,
         # Bijectors.bijector(d::AntarcticPrior) = antarctic_dist_funcs[3]
 
         # # calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir="data/calibration_data")
-        # calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir=joinpath(@__DIR__, "..", "..", "..", "data", "calibration_data"))
+        calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir=joinpath(@__DIR__, "..", "..", "data", "calibration_data"))
+
+        println(first(calibration_data, 5))
 
         run_brick = construct_run_brick(1850, 2017)
         (obs, err, obs_length) = get_calibration_inputs(calibration_data, thermal_trends)
         model = brick_posterior(obs, err, obs_length, thermal_trends, run_brick)
-        chain = sample(model, NUTS(), 100)
+
+        # println(typeof(model))
+        # println("model shmodel")
+        # println(model)
+
+        chains = sample(model, NUTS(), total_chain_length)
+
+        plot(chains)
     elseif model_config=="doeclimbrick"
         run_mymodel! = MimiBRICK.construct_run_doeclimbrick(calibration_start_year, calibration_end_year)
         log_posterior_mymodel = MimiBRICK.construct_doeclimbrick_log_posterior(run_mymodel!, model_start_year=calibration_start_year, calibration_end_year=calibration_end_year, joint_antarctic_prior=false)
