@@ -10,6 +10,7 @@ using RobustAdaptiveMetropolisSampler
 using Random
 using StatsBase
 using Turing
+using Plots
 
 #-------------------------------------------------------------------------------
 # This function carries out a Markov chain Monte Carlo calibration of BRICK.
@@ -52,6 +53,7 @@ function run_calibration(;  output_dir::String,
                             start_from_priors=false,
                             calibration_data_dir::Union{String, Nothing} = nothing
                         )
+
 
     # set calibration data directory if one was not provided ie. it is set as nothing
     if isnothing(calibration_data_dir)
@@ -107,12 +109,13 @@ function run_calibration(;  output_dir::String,
     # @eval and Symbols so this can be run as a function instead of a script.
     if model_config=="brick"
         # run_mymodel! = MimiBRICK.construct_run_brick(calibration_start_year, calibration_end_year)
-        # log_posterior_mymodel = MimiBRICK.construct_brick_log_posterior(run_mymodel!, model_start_year=calibration_start_year, calibration_end_year=calibration_end_year, joint_antarctic_prior=false)
+        # run_mymodel! = construct_run_brick(calibration_start_year, calibration_end_year)
+        # log_posterior_mymodel = construct_brick_log_posterior(run_mymodel!, model_start_year=calibration_start_year, calibration_end_year=calibration_end_year, joint_antarctic_prior=false)
         # println("IN")
         # println("CALIBRATION")
-        # println(".JL")
+        # println(".JL") 
         
-        # println("before struct")
+        # # println("before struct")
         # struct AntarcticPrior <: ContinuousMultivariateDistribution end
         # println("after struct")
         
@@ -122,7 +125,7 @@ function run_calibration(;  output_dir::String,
         # Base.length(d::AntarcticPrior) = 15
         # Distributions._rand!(rng::AbstractRNG, d::AntarcticPrior, x::AbstractArray{<:Real}) = antarctic_dist_funcs[1](rng, d, x)
         # Distributions.logpdf(d::AntarcticPrior, x::AbstractArray{<:Real}) = antarctic_dist_funcs[2](d, x)
-        # Bijectors.bijector(d::AntarcticPrior) = antarctic_dist_funcs[3]
+        # Bijectors.bijector(d::AntarcticPrior) = antarctic_dist_funcs[3](d)
 
         # # calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir="data/calibration_data")
         calibration_data, antarctic_trends, thermal_trends = get_brick_calibration_data(calibration_data_dir=joinpath(@__DIR__, "..", "..", "data", "calibration_data"))
@@ -133,11 +136,18 @@ function run_calibration(;  output_dir::String,
         (obs, err, obs_length) = get_calibration_inputs(calibration_data, thermal_trends)
         model = brick_posterior(obs, err, obs_length, thermal_trends, run_brick)
 
-        # println(typeof(model))
-        # println("model shmodel")
-        # println(model)
+        println("before sampling")
 
-        chains = sample(model, NUTS(), total_chain_length)
+        sampler = NUTS()
+
+        println(typeof(model))
+        println(typeof(sampler))
+        println(typeof(total_chain_length))
+        println(typeof(num_walkers))
+
+        chains = sample(model, sampler, MCMCThreads(), total_chain_length, num_walkers)
+
+        println("after sampling")
 
         plot(chains)
     elseif model_config=="doeclimbrick"

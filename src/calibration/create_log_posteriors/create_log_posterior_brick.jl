@@ -33,9 +33,7 @@ Function Arguments:
 """
 
 # antarctic prior
-println("before struct")
 struct AntarcticPrior <: ContinuousMultivariateDistribution end
-println("after struct")
 
 function construct_antarctic_prior(; calibration_data_dir::Union{String, Nothing} = nothing)
 
@@ -77,7 +75,6 @@ function construct_antarctic_prior(; calibration_data_dir::Union{String, Nothing
         end
     end
 
-    println("test bijector")
     println(typeof(Stacked(Bijectors.Logit.(antarctic_lower_bound, antarctic_upper_bound))))
     bijector_func(d::AntarcticPrior) = Stacked(Bijectors.Logit.(antarctic_lower_bound, antarctic_upper_bound))
 
@@ -85,12 +82,10 @@ function construct_antarctic_prior(; calibration_data_dir::Union{String, Nothing
 end
 
 antarctic_dist_funcs = construct_antarctic_prior() 
-println(" before antarctic prior constructed")
 Base.length(d::AntarcticPrior) = 15
 Distributions._rand!(rng::AbstractRNG, d::AntarcticPrior, x::AbstractArray{<:Real}) = antarctic_dist_funcs[1](rng, d, x)
 Distributions.logpdf(d::AntarcticPrior, x::AbstractArray{<:Real}) = antarctic_dist_funcs[2](d, x)
 Bijectors.bijector(d::AntarcticPrior) = antarctic_dist_funcs[3](d)
-println(" after antarctic prior constructed")
 
 
 
@@ -143,6 +138,7 @@ function get_calibration_inputs(calibration_data::DataFrame, thermal_trends::Dat
     return (obs, err, obs_lengths)
 end
 
+
 @model function brick_posterior(observations, obs_error, obs_lengths, thermal_trends, f_run_model; model_start_year::Int=1850, calibration_end_year::Int=2017)
     ## priors
     σ_glaciers ~ Uniform(1e-10, 0.0015) # Based on BRICK code.
@@ -153,51 +149,20 @@ end
     ρ_greenland ~ Uniform(-0.99, 0.99)
     ρ_antarctic ~ Uniform(-0.99, 0.99)
     ρ_gmsl ~ truncated(Normal(0.8, .25), -1.0, 1.0)
-
     thermal_s₀ ~ Uniform(-0.0484, 0.0484) # BRICK defaults. # Initial sea level rise due to thermal expansion designated in 1850 (m SLE).
     greenland_v₀ ~ Uniform(7.16, 7.56)
     glaciers_v₀ ~ Uniform(0.31, 0.53)
     glaciers_s₀ ~ Uniform(-0.0536, 0.0791)
     antarctic_s₀ ~ Uniform(-0.04755, 0.05585) # Informed by prior BRICK runs.
-
-    thermal_α ~ Uniform(0.05, 0.3) # upper/lower bounds from "Impacts of Observational Constraints Related to Sea Level on Estimates of Climate Sensitivity"  # Global ocean-averaged thermal expansion coefficient (kg m⁻³ °C⁻¹).
-
+    # upper/lower bounds from "Impacts of Observational Constraints Related to Sea Level on Estimates of Climate Sensitivity"  
+    # Global ocean-averaged thermal expansion coefficient (kg m⁻³ °C⁻¹).
+    thermal_α ~ Uniform(0.05, 0.3) 
     greenland_a ~ Uniform(-4.0, -0.001)
     greenland_b ~ Uniform(5.888, 8.832)
     greenland_α ~ Uniform(0.0, 0.001)
     greenland_β ~ Uniform(0.0, 0.001)
     glaciers_β₀ ~ Uniform(0.0, 0.041)
     glaciers_n  ~ Uniform(0.55, 1.0)
-
-    # println(σ_glaciers)
-    # println(typeof(σ_glaciers))
-
-    # if !(σ_glaciers isa Float64)
-    #     # println("but like why? ")
-    #     σ_glaciers                 = σ_glaciers.value
-    #     σ_greenland                = σ_greenland.value
-    #     σ_antarctic                = σ_antarctic.value
-    #     σ_gmsl                     = σ_gmsl.value
-    #     ρ_glaciers                 = ρ_glaciers.value
-    #     ρ_greenland                = ρ_greenland.value
-    #     ρ_antarctic                = ρ_antarctic.value
-    #     ρ_gmsl                     = ρ_gmsl.value
-    #     thermal_s₀                 = thermal_s₀.value
-    #     greenland_v₀               = greenland_v₀.value
-    #     glaciers_v₀                = glaciers_v₀.value
-    #     glaciers_s₀                = glaciers_s₀.value
-    #     antarctic_s₀               = antarctic_s₀.value
-    #     thermal_α                  = thermal_α.value
-    #     greenland_a                = greenland_a.value
-    #     greenland_b                = greenland_b.value
-    #     greenland_α                = greenland_α.value
-    #     greenland_β                = greenland_β.value
-    #     glaciers_β₀                = glaciers_β₀.value
-    #     glaciers_n                 = glaciers_n.value
-    # end
-
-
-
     antarctic_params ~ AntarcticPrior()
 
     (anto_α,
@@ -215,6 +180,8 @@ end
     antarctic_slope,
     antarctic_λ,
     antarctic_temp_threshold) = antarctic_params
+
+
 
     # run model    
     (modeled_glaciers, 
@@ -251,6 +218,7 @@ end
                         antarctic_temp_threshold)
                     )
 
+
     break_indices = cumsum(obs_lengths)
     # println(typeof(break_indices))
 
@@ -259,31 +227,6 @@ end
     # Calculate the AIS trends (in milimeters) from the annual modeled output.
     modeled_thermal_trend = calculate_trends(disallowmissing(modeled_thermal_expansion), thermal_trends, model_start_year, calibration_end_year)
 
-    # if !(σ_glaciers isa Float64)
-
-    #     ## construct covariance matrices for each observation series
-    #     H_glaciers = abs.((1:obs_lengths[1]) .- (1:obs_lengths[1])')
-    #     Σ_glaciers = ((σ_glaciers.value / sqrt(1 - ρ_glaciers.value^2)) .^ H_glaciers)
-    #     H_greenland = abs.((1:obs_lengths[2]) .- (1:obs_lengths[2])')
-    #     Σ_greenland = ((σ_greenland.value / sqrt(1 - ρ_greenland.value^2)) .^ H_greenland) 
-    #     H_antarctic = abs.((1:obs_lengths[3]) .- (1:obs_lengths[3])')
-    #     Σ_antarctic = ((σ_antarctic.value / sqrt(1 - ρ_antarctic.value^2)) .^ H_antarctic)
-    #     H_gmsl = abs.((1:obs_lengths[4]) .- (1:obs_lengths[4])')
-    #     Σ_gmsl = ((σ_gmsl.value / sqrt(1 - ρ_gmsl.value^2)) .^ H_gmsl)
-
-    # else 
-
-    #     ## construct covariance matrices for each observation series
-    #     H_glaciers = abs.((1:obs_lengths[1]) .- (1:obs_lengths[1])')
-    #     Σ_glaciers = ((σ_glaciers / sqrt(1 - ρ_glaciers^2)) .^ H_glaciers)
-    #     H_greenland = abs.((1:obs_lengths[2]) .- (1:obs_lengths[2])')
-    #     Σ_greenland = ((σ_greenland / sqrt(1 - ρ_greenland^2)) .^ H_greenland) 
-    #     H_antarctic = abs.((1:obs_lengths[3]) .- (1:obs_lengths[3])')
-    #     Σ_antarctic = ((σ_antarctic / sqrt(1 - ρ_antarctic^2)) .^ H_antarctic)
-    #     H_gmsl = abs.((1:obs_lengths[4]) .- (1:obs_lengths[4])')
-    #     Σ_gmsl = ((σ_gmsl / sqrt(1 - ρ_gmsl^2)) .^ H_gmsl)
-
-    # end
 
     ## construct covariance matrices for each observation series
     H_glaciers = abs.((1:obs_lengths[1]) .- (1:obs_lengths[1])')
@@ -298,12 +241,7 @@ end
     # combine time series and compute joint likelihood
     Σ = zeros(eltype(Σ_glaciers), n_all, n_all)
 
-    # println("break_indices")
-    # println(break_indices)
-    # println(typeof(break_indices))
-    # println("Σ_glaciers")
-    # println(Σ_glaciers)
-    # println(typeof(Σ_glaciers))
+
 
 
 
@@ -316,40 +254,10 @@ end
 
     modeled_all = [modeled_glaciers; modeled_greenland; modeled_antarctic; modeled_gmsl; modeled_thermal_trend]
 
-    # println("before mvnormal")
 
-    # println(first(Σ, 5))
-
-    # println(isposdef(Σ))
-
-
-    
-    # scaled_identity_matrix = Matrix(I, size(Σ)) * 0.01
-    # Σ = Σ + scaled_identity_matrix
-    # Σ = Symmetric(Σ)
-
-    # (evals, evecs) = eigen(Σ)
-    # println(evals)
-    # println("minimum")
-    # println(minimum(evals))
-
-    println(typeof(Σ))
-    println(PDMats.Symmetric(Σ[1:5,1:5]))
-
-
-    # modeled_all ~ MvNormal(observations, PDMats.Symmetric(Σ))
     modeled_all ~ MvNormal(observations, PDMats.Symmetric(Σ))
 
-    # println("after mvnormal")
 
 
 end
 
-# run_brick = construct_run_brick(1850, 2017)
-# (obs, err, obs_length) = get_calibration_inputs(calibration_data, thermal_trends)
-# model = brick_posterior(obs, err, obs_length, thermal_trends, run_brick)
-# chain = sample(model, NUTS(), 100)
-
-##------------------------------------------------------------------------------
-## End
-##------------------------------------------------------------------------------
